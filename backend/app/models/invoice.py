@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -15,7 +15,6 @@ class PaymentMode(str, enum.Enum):
 
 
 class InvoiceStatus(str, enum.Enum):
-    pending = "pending"
     completed = "completed"
     cancelled = "cancelled"
 
@@ -36,12 +35,16 @@ class Invoice(Base):
     )
     subtotal: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     discount_amount: Mapped[float] = mapped_column(Numeric(12, 2), default=0.00)
+    tax_rate: Mapped[float] = mapped_column(Numeric(5, 2), default=0.00)
     tax_amount: Mapped[float] = mapped_column(Numeric(12, 2), default=0.00)
     total_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     payment_mode: Mapped[PaymentMode] = mapped_column(Enum(PaymentMode), nullable=False)
     status: Mapped[InvoiceStatus] = mapped_column(
         Enum(InvoiceStatus), default=InvoiceStatus.completed, nullable=False
     )
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    cancellation_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     served_by_user_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
@@ -53,7 +56,9 @@ class Invoice(Base):
     customer: Mapped["Customer"] = relationship("Customer", back_populates="invoices")
     doctor: Mapped["Doctor"] = relationship("Doctor", back_populates="invoices")
     prescription: Mapped["Prescription"] = relationship("Prescription", back_populates="invoices")
-    items: Mapped[list["InvoiceItem"]] = relationship("InvoiceItem", back_populates="invoice")
+    items: Mapped[list["InvoiceItem"]] = relationship(
+        "InvoiceItem", back_populates="invoice", cascade="all, delete-orphan"
+    )
 
 
 class InvoiceItem(Base):
@@ -68,7 +73,8 @@ class InvoiceItem(Base):
     )
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     unit_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
-    discount: Mapped[float] = mapped_column(Numeric(5, 2), default=0.00)
+    discount_rate: Mapped[float] = mapped_column(Numeric(5, 2), default=0.00)
+    discount_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0.00)
     line_total: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
 
     invoice: Mapped["Invoice"] = relationship("Invoice", back_populates="items")

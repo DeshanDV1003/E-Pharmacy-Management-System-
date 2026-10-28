@@ -27,6 +27,7 @@ class Drug(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     strength: Mapped[str | None] = mapped_column(String(50), nullable=True)
     dosage_form: Mapped[DosageForm] = mapped_column(Enum(DosageForm), nullable=False)
+    storage_requirements: Mapped[str | None] = mapped_column(String(300), nullable=True)
     batch_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
     manufactured_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     expiry_date: Mapped[date | None] = mapped_column(Date, nullable=True)
@@ -35,10 +36,15 @@ class Drug(Base):
     quantity: Mapped[int] = mapped_column(Integer, default=0)
     pack_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
     low_stock_threshold: Mapped[int] = mapped_column(Integer, default=10)
+    reorder_level: Mapped[int] = mapped_column(Integer, default=10)
     is_prescription_only: Mapped[bool] = mapped_column(Boolean, default=False)
     is_otc: Mapped[bool] = mapped_column(Boolean, default=True)
     is_high_alert: Mapped[bool] = mapped_column(Boolean, default=False)
     is_narcotic: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    category_id: Mapped[int | None] = mapped_column(
+        ForeignKey("drug_categories.id", ondelete="SET NULL"), nullable=True
+    )
     supplier_id: Mapped[int | None] = mapped_column(
         ForeignKey("suppliers.id", ondelete="SET NULL"), nullable=True
     )
@@ -47,4 +53,11 @@ class Drug(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
+    category: Mapped["DrugCategory"] = relationship("DrugCategory", back_populates="drugs")
     supplier: Mapped["Supplier"] = relationship("Supplier", back_populates="drugs")
+    price_adjustments: Mapped[list["PriceAdjustment"]] = relationship(
+        "PriceAdjustment", back_populates="drug"
+    )
+    stock_movements: Mapped[list["StockMovement"]] = relationship(
+        "StockMovement", back_populates="drug"
+    )

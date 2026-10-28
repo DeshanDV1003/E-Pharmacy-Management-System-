@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -11,6 +11,7 @@ import enum
 class PurchaseOrderStatus(str, enum.Enum):
     draft = "draft"
     submitted = "submitted"
+    partially_received = "partially_received"
     received = "received"
     cancelled = "cancelled"
 
@@ -25,6 +26,7 @@ class PurchaseOrder(Base):
     )
     order_date: Mapped[date] = mapped_column(Date, nullable=False)
     expected_delivery_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    received_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[PurchaseOrderStatus] = mapped_column(
         Enum(PurchaseOrderStatus), default=PurchaseOrderStatus.draft, nullable=False
     )
@@ -39,7 +41,10 @@ class PurchaseOrder(Base):
 
     supplier: Mapped["Supplier"] = relationship("Supplier", back_populates="purchase_orders")
     items: Mapped[list["PurchaseOrderItem"]] = relationship(
-        "PurchaseOrderItem", back_populates="purchase_order"
+        "PurchaseOrderItem", back_populates="purchase_order", cascade="all, delete-orphan"
+    )
+    goods_receipts: Mapped[list["GoodsReceipt"]] = relationship(
+        "GoodsReceipt", back_populates="purchase_order"
     )
 
 
@@ -57,6 +62,7 @@ class PurchaseOrderItem(Base):
     quantity_received: Mapped[int] = mapped_column(Integer, default=0)
     unit_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     line_total: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    is_free_goods: Mapped[bool] = mapped_column(Boolean, default=False)
 
     purchase_order: Mapped["PurchaseOrder"] = relationship(
         "PurchaseOrder", back_populates="items"
