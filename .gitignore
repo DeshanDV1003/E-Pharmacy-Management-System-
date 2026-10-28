@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Alembic
+migrations/versions/*.pyc
+
+# Node
+node_modules/
+dist/
+.env.local
+.env.production
+
+# Uploads (runtime data, not code)
+uploads/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
